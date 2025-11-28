@@ -1,0 +1,143 @@
+#include <iostream>
+using namespace std;
+
+struct Item {
+	int id;
+	int profit;
+	int weight;
+	float ratio;
+};
+		
+void sort(struct Item items[], int n) { 	// Bubble Sort 
+	for(int i=0; i<n-1; i++) {
+		for(int j=0; j<n-i-1; j++) {
+			if(items[j].ratio<items[j+1].ratio) {
+				struct Item temp= items[j];
+				items[j]=items[j+1];				
+				items[j+1]=temp;
+			}
+		}
+	}
+}
+
+float fractionalKnapsack (struct Item items[], int n, int capacity) {
+	int rem_capacity=capacity;
+	float tot_profit=0;
+	
+	sort(items, n);
+	
+	cout << "Items taken by Greedy Knapsack:\n";
+	for(int i=0; i<n; i++) {
+	
+		// Taking fully
+		if(rem_capacity>=items[i].weight) { 		
+			tot_profit+=items[i].profit;
+			rem_capacity-=items[i].weight;
+			cout << "Item ID: " << items[i].id << "\nItem Profit, Weight: " << items[i].profit << " " << items[i].weight;
+			cout << "\nTot Profit, Remaining Capacity: " << tot_profit << "/- , " << rem_capacity << " kg" << endl << endl; 
+		}
+		
+		// Taking fractionally
+		else {
+			cout << "Item taken Partially :\n";
+			
+			tot_profit+=rem_capacity*items[i].ratio;
+			cout << "Item ID: " << items[i].id << "\nItem Profit, Weight: " << items[i].ratio*rem_capacity << ", " << rem_capacity;
+			cout << "\nTot Profit, Remaining Capacity: " << tot_profit << "/- , " << "0 kg" << endl; 
+			break;
+		}
+	}
+	
+	return tot_profit;
+}
+		
+/*int knapsack_0_1 (int w[], int p[], bool knapsack[], int **a, int n, int capacity) {
+	return tot_profit;
+} */
+
+int main () {
+	int n;
+	cout << "Enter the number of items: ";
+	cin >> n;
+	
+	//Fractinal Starts
+	Item items[n];
+	cout << "Enter profits and weights:\n";
+	for(int i=0; i<n; i++) {
+		cout << "Item " << i+1 << " (Profit, Weight): ";
+		cin >> items[i].profit >> items[i].weight;
+		items[i].ratio=(double)items[i].profit/items[i].weight;
+		items[i].id=i+1;
+		cout << endl;
+	}
+		
+	int capacity;
+	cout << "Enter capacity: ";
+	cin >> capacity;
+	
+	float greedy_profit=fractionalKnapsack(items, n, capacity);
+	cout << "\nGreedy Profit: " << greedy_profit << endl;
+	
+	// 0/1 Starts
+	int w[n], p[n]; 
+	for (int i = 0; i < n; i++) {
+        w[i] = items[i].weight;
+        p[i] = items[i].profit;
+    }
+	
+	bool knapsack[n]={0};		// Initialize all to 0 so you won't have 2 write another for loop :)
+	int a[n+1][capacity+1];
+	
+	for(int i=0; i<=n; i++) {
+		a[i][0]=0;		// Rows
+	}
+	
+	for(int i=0; i<=capacity; i++) {
+		a[0][i]=0;		// Columns
+	}
+	
+		
+	// Formula -> A[i,w] = max ( a[i-1, w] , a[i-1, w-w[i]] + p[i] )
+	// i is normal
+	
+	// Columns = j = W
+	// So if you encounter W, just replace it with j and boom 
+	// But w[i] must not be disturbed, keep it as w[i-1] since indexig is diff
+	
+	for(int i=1; i<=n; i++) {
+		for(int j=1; j<=capacity; j++) {
+			if( (j - w[i-1])< 0 ) {		// w-w[i] but we wrote j-w[i-1] cuz indexing starts from 0 in arrays n formula indexses from 1
+				a[i][j]=a[i-1][j]; 			
+			}
+			
+			else {
+				a[i][j]= max( a[i-1][j] , a[i-1][j - w[i-1]] + p[i-1] );
+			}
+		}
+	}
+	
+	// Marking 0 n 1 by backtracking 
+	for (int i = n; i >= 1; i--) {
+        if (a[i][capacity] != a[i - 1][capacity]) {
+            knapsack[i - 1] = 1;
+            capacity -= w[i - 1];	
+        }
+    }
+	
+	int dp_profit=0;		// No float as we take NO fractional parts
+	for(int i=0; i<n; i++) {
+		if (knapsack[i]==1) {
+			dp_profit+=p[i];
+		}
+	}
+	
+	//int dp_profit= knapsack_0_1(w, p, knapsack, a, n, capacity);
+	
+	cout << "Optimal DP Profit: " << dp_profit << endl;
+	
+	cout << "Difference: " << (float)dp_profit-greedy_profit << endl;
+	
+	cout << "Approach: ";
+	cout << ((dp_profit>greedy_profit) ? "0/1 Better" : ((dp_profit==greedy_profit) ? "Both perform same" : "Fractional Knapsack is better"));
+	cout << endl;
+}
